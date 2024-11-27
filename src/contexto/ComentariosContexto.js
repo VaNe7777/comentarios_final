@@ -8,6 +8,9 @@ const ComentariosContexto = createContext()
 export const ComentariosProvider = ({ children }) => {
 
     const [comments, setComments] = useState()
+   //Estado global
+   const [isLoading, setIsLoading]=
+          useState(true)
 
     useEffect(()=>{
       fetchComentarios()
@@ -19,14 +22,40 @@ export const ComentariosProvider = ({ children }) => {
        const response = await fetch('http://localhost:5000/comentarios')
        const comentariosAPI = await response.json()
       setComments(comentariosAPI)
+      //establecer el estado de carga a falso
+      setIsLoading(false)
     }
 
-    const borrarItem= (id) =>{
+    const addItem = async (newComentario) => {
+      try {
+        const response = await fetch('http://localhost:5000/comentarios', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newComentario),
+        });
+    
+        if (!response.ok) {
+          throw new Error('Error al guardar el comentario');
+        }
+    
+        const data = await response.json();
+        setComments([data, ...comments]);
+    
+        alert('¡Registro exitoso!');
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+      }
+    };
+    
+
+
+    const borrarItem=async (id) =>{
         if(  window.confirm('¿Estas seguro que quieres borrar el comentario?')){
+          const response = await fetch(`http://localhost:5000/comentarios/${id}`, {method: 'DELETE'})
           
-          //asignar nuevo estado a comments
-          //filter:para quitar los comentarios
-          //cuyo id concuerde con el parametro id
+        
           setComments(comments.filter((c)=> c.id !== id))     
         }  
       }
@@ -36,7 +65,10 @@ export const ComentariosProvider = ({ children }) => {
             <ComentariosContexto.Provider 
                     value={{ comments, 
                              setComments,
-                             borrarItem }} >
+                             isLoading,
+                             setIsLoading,
+                             borrarItem,
+                             addItem }} >
         { children }
     </ComentariosContexto.Provider>)
 }
